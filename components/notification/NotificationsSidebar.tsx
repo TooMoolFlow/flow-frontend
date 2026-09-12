@@ -1,0 +1,273 @@
+'use client'
+
+import { useNotificationStore } from '@/stores/notificationStore'
+import React, { useEffect, useState } from 'react'
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Bell, CheckCircle, Clock, AlertCircle } from 'lucide-react'
+import { createClickableRequestIds } from '@/lib/notificationUtils'
+import { useRequestFromNotification } from '@/hooks/useRequestFromNotification'
+import { RequestNotFoundModal } from '@/components/RequestNotFoundModal'
+import { formatDateOnly } from '@/lib/dateTimeUtils'
+import { token } from "@/lib/tokens";
+
+interface Notification {
+    id: number
+    title: string
+    content: string
+    is_read: boolean
+    created_at: string
+}
+
+interface Props {
+    onNotificationClick: (notification: Notification) => void
+    onRequestClick?: (requestId: string) => boolean
+    variant?: 'light' | 'dark'
+    limit?: number
+    hasMore?: boolean
+    loadingMore?: boolean
+    onLoadMore?: () => void
+}
+
+export function NotificationsSidebar({
+    onNotificationClick,
+    onRequestClick,
+    variant = 'light',
+    limit = 5,
+    hasMore,
+    loadingMore,
+    onLoadMore
+}: Props) {
+
+    const { notifications, notificationLoading } = useNotificationStore()
+    const [displayedNotifications, setDisplayedNotifications] = useState<Notification[]>([])
+    const { getRequestById } = useRequestFromNotification()
+    const [showNotFoundModal, setShowNotFoundModal] = useState(false)
+    const [notFoundRequestId, setNotFoundRequestId] = useState<string>('')
+
+    const isDark = variant === 'dark'
+
+    useEffect(() => {
+        const sorted = [...notifications].sort(
+            (a: any, b: any) =>
+                new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        )
+
+        const limited = limit > 0 ? sorted.slice(0, limit) : sorted
+        setDisplayedNotifications(limited)
+    }, [notifications, limit])
+
+    const formatTimeAgo = (dateStr: string) => {
+        const date = new Date(dateStr)
+        const now = new Date()
+
+        const diffInMs = now.getTime() - date.getTime()
+        const diffInMinutes = Math.floor(diffInMs / (1000 * 60))
+        const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60))
+        const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24))
+
+        if (diffInMinutes < 1) return 'только что'
+        if (diffInMinutes < 60) return `${diffInMinutes} мин назад`
+        if (diffInHours < 24) return `${diffInHours} ч назад`
+        if (diffInDays < 7) return `${diffInDays} дн назад`
+
+        return formatDateOnly(dateStr)
+    }
+
+    const getNotificationIcon = (title: string) => {
+        const lowerTitle = title.toLowerCase()
+
+        if (lowerTitle.includes('принята') || lowerTitle.includes('одобрена')) {
+            return (
+                <CheckCircle
+                    className={`w-4 h-4 ${isDark ? 'text-brand' : 'text-marine'}`}
+                />
+            )
+        }
+
+        if (lowerTitle.includes('завершена') || lowerTitle.includes('выполнена')) {
+            return (
+                <CheckCircle
+                    className={`w-4 h-4 ${isDark ? 'text-brand' : 'text-marine'}`}
+                />
+            )
+        }
+
+        if (lowerTitle.includes('просрочена') || lowerTitle.includes('отклонена')) {
+            return (
+                <AlertCircle className="w-4 h-4 text-brand" />
+            )
+        }
+
+        return (
+            <Clock
+                className={`w-4 h-4 ${isDark ? 'text-content-tertiary' : 'text-content-secondary'}`}
+            />
+        )
+    }
+
+    const getNotificationBgColor = (title: string, isRead: boolean) => {
+        const lowerTitle = title.toLowerCase()
+
+        if (isDark) {
+            if (isRead) return 'bg-surface-3/50 border-hairline'
+            return 'bg-surface-3 border-brand/30'
+        }
+
+        if (isRead)
+            return 'bg-gradient-to-r from-surface-3 to-surface-3/30 border-hairline-strong backdrop-blur-sm'
+
+        if (lowerTitle.includes('принята') || lowerTitle.includes('одобрена')) {
+            return 'bg-gradient-to-r from-marine-500/20 via-marine-500/10 to-marine-500/20 border-marine-500/30 backdrop-blur-md'
+        }
+
+        if (lowerTitle.includes('завершена') || lowerTitle.includes('выполнена')) {
+            return 'bg-gradient-to-r from-marine-500/20 via-brand/10 to-marine-500/20 border-marine-500/30 backdrop-blur-md'
+        }
+
+        if (lowerTitle.includes('просрочена') || lowerTitle.includes('отклонена')) {
+            return 'bg-gradient-to-r from-brand/20 via-brand/10 to-brand/20 border-brand/30 backdrop-blur-md'
+        }
+
+        return 'bg-gradient-to-r from-brand/15 via-brand-600/10 to-brand/15 border-brand/30 backdrop-blur-md'
+    }
+
+    const handleRequestIdClick = (requestId: string) => {
+        const request = getRequestById(requestId)
+
+        if (request && onRequestClick) {
+            const success = onRequestClick(requestId)
+            if (success) return
+        }
+
+        setNotFoundRequestId(requestId)
+        setShowNotFoundModal(true)
+    }
+
+    return (
+        <>
+            <Card className={isDark
+                ? "border border-hairline shadow-none bg-transparent"
+                : "border-0 shadow-elev-2 bg-white/95 backdrop-blur-sm"}>
+
+                <CardHeader className="pb-3">
+                    <div className="flex items-center gap-3">
+                        <div
+                            className="w-8 h-8 rounded-lg flex items-center justify-center"
+                            style={{ background: isDark ? token.brand : token.brand600 }}>
+                            <Bell className="h-4 w-4 text-white" />
+                        </div>
+
+                        <CardTitle
+                            className={isDark
+                                ? "text-lg font-bold text-white"
+                                : "text-lg font-bold text-content"}>
+
+                            Уведомления
+                        </CardTitle>
+                    </div>
+                </CardHeader>
+
+                <CardContent className="pt-0">
+                    {notificationLoading ? (
+                        <div className="flex justify-center py-8">
+                            <div
+                                className={`flex items-center gap-2 ${isDark ? 'text-content-tertiary' : 'text-content-tertiary'}`}>
+                                <div
+                                    className={`w-4 h-4 border-2 border-t-transparent rounded-full animate-spin ${isDark ? 'border-brand' : 'border-marine'}`} />
+                                <span className="text-sm">Загрузка...</span>
+                            </div>
+                        </div>
+                    ) : displayedNotifications.length === 0 ? (
+                        <div className="text-center py-8">
+                            <div
+                                className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 ${isDark ? 'bg-surface-3' : 'bg-surface-3'}`}>
+                                <Bell
+                                    className={`h-6 w-6 ${isDark ? 'text-content-tertiary' : 'text-content-secondary'}`} />
+                            </div>
+
+                            <p className={`font-medium text-sm ${isDark ? 'text-content-tertiary' : 'text-content-secondary'}`}>
+                                Нет уведомлений
+                            </p>
+
+                            <p className={`text-xs mt-1 ${isDark ? 'text-content-tertiary' : 'text-content-secondary'}`}>
+                                Новые уведомления появятся здесь
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            {displayedNotifications.map((n: any) => (
+                                <div
+                                    key={n.id}
+                                    onClick={() => onNotificationClick(n)}
+                                    className={`p-3 rounded-xl border cursor-pointer transition-all duration-200 hover:shadow-elev-2 hover:scale-[1.01] ${getNotificationBgColor(n.title, n.is_read)} ${n.is_read ? 'opacity-75' : 'opacity-100'}`}
+                                >
+                                    <div className="flex items-start gap-3">
+                                        <div className="flex-shrink-0 mt-0.5">
+                                            {getNotificationIcon(n.title)}
+                                        </div>
+
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-start justify-between gap-2">
+                                                <h3
+                                                    className={`text-sm font-semibold line-clamp-2 leading-tight ${isDark ? 'text-white' : 'text-content'}`}>
+                                                    {n.title}
+                                                </h3>
+
+                                                {!n.is_read && (
+                                                    <span
+                                                        className="flex-shrink-0 px-2 py-0.5 text-xs font-medium text-brand bg-brand/20 rounded-full whitespace-nowrap">
+                                                        Новое
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            <p
+                                                className={`text-xs mt-1 flex items-center gap-1 ${isDark ? 'text-content-tertiary' : 'text-content-secondary'}`}>
+                                                <Clock className="w-3 h-3" />
+                                                {formatTimeAgo(n.created_at)}
+                                            </p>
+
+                                            <p
+                                                className={`text-sm mt-2 leading-relaxed line-clamp-2 ${isDark ? 'text-content-secondary' : 'text-content'}`}>
+                                                {createClickableRequestIds(n.content, handleRequestIdClick)}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+
+                            {hasMore && onLoadMore && (
+                                <div className="pt-3">
+                                    <button
+                                        type="button"
+                                        onClick={onLoadMore}
+                                        disabled={loadingMore}
+                                        className={`w-full py-2.5 rounded-xl border text-sm font-medium transition-colors ${isDark
+                                            ? 'border-hairline text-brand hover:bg-surface-3 disabled:opacity-50'
+                                            : 'border-marine/30 text-marine hover:bg-marine/10 disabled:opacity-50'
+                                            }`}
+                                    >
+                                        {loadingMore ? (
+                                            <span className="flex items-center justify-center gap-2">
+                                                <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                                                Загрузка...
+                                            </span>
+                                        ) : (
+                                            'Загрузить ещё'
+                                        )}
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+
+            <RequestNotFoundModal
+                isOpen={showNotFoundModal}
+                onClose={() => setShowNotFoundModal(false)}
+                requestId={notFoundRequestId}
+            />
+        </>
+    )
+}

@@ -1,0 +1,855 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================================
+   ТОКЕНЫ — единственный источник правды для цвета, формы, глубины и движения.
+   Правило: hex-значений в components/** и app/** быть не должно.
+   Формат цвета — «H S% L%» (без hsl()), чтобы работал `hsl(var(--x) / alpha)`.
+   ============================================================================ */
+
+@layer base {
+  :root,
+  [data-theme="light"] {
+    /* ── Brand · медь · H 18° S 72% ─────────────────────────────────────────
+       Тот же оранжевый бренд, но глубже и чуть менее кричащий: 16°/80%/54%
+       → 18°/72%/50%. Разница небольшая, а поверхность перестаёт «звенеть»
+       рядом с нейтральными. Якорь — 500. */
+    --brand-50: 20 80% 96%;
+    --brand-100: 19 78% 91%;
+    --brand-200: 19 76% 82%;
+    --brand-300: 18 74% 71%;
+    --brand-400: 18 73% 61%;
+    --brand-500: 18 72% 50%; /* #DB5B24 — якорь шкалы */
+    --brand-600: 18 74% 42%;
+    --brand-700: 18 76% 34%;
+    --brand-800: 19 78% 26%;
+    --brand-900: 20 80% 18%;
+    --brand-950: 22 82% 10%;
+
+    /* ── Marine · второй акцент · H 199° S 66% ───────────────────────────────
+       Насыщенность снижена с 71% до 66%: рядом с тёплым графитом прежняя
+       читалась как чернильное пятно. */
+    --marine-50: 199 66% 95%;
+    --marine-100: 199 66% 88%;
+    --marine-200: 199 64% 77%;
+    --marine-300: 199 62% 63%;
+    --marine-400: 199 64% 45%;
+    --marine-500: 199 66% 35%;
+    --marine-600: 199 66% 28%;
+    --marine-700: 199 66% 23%;
+    --marine-800: 199 66% 18%;
+    --marine-900: 199 64% 13%;
+
+    /* ── Neutral · тёплый графит ─────────────────────────────────────────────
+       Было семейство системных серых Apple с тоном 240° — синеватое. Рядом с
+       тёплым оранжевым такие серые читаются как пластик. Тон переведён в 30°
+       с очень низкой насыщенностью: цвет не виден как цвет, но перестаёт
+       спорить с акцентом.
+
+       Тёмный конец не доходит до чистого чёрного: на чистом чёрном нельзя
+       построить глубину — приподнятой поверхности некуда быть светлее
+       «естественно», и всё выглядит наклеенным. */
+    --gray-0: 0 0% 100%; /* #FFFFFF */
+    --gray-25: 30 20% 98%; /* #FCFAF8 — тёплая бумага */
+    --gray-50: 30 14% 95%; /* #F5F1EE */
+    --gray-100: 30 10% 90%; /* #E9E4DF */
+    --gray-200: 30 8% 78%; /* #CCC4BC */
+    --gray-300: 30 6% 66%; /* #ADA6A0 */
+    --gray-400: 30 5% 54%; /* #908A84 — приглушённый текст на тёмном */
+    --gray-500: 30 5% 40%; /* #6B655F */
+    --gray-600: 30 6% 27%; /* #493F39 */
+    --gray-700: 30 7% 20%; /* #37312C — заливка, чип */
+    --gray-800: 30 8% 15%; /* #2A2522 — приподнятая карточка, разделитель */
+    --gray-900: 30 9% 11%; /* #1F1C1A — карточка */
+    --gray-950: 30 10% 7%; /* #141210 — фон страницы */
+    --gray-1000: 0 0% 0%; /* #000000 */
+
+    /* ── Status ───────────────────────────────────────────────────────────
+       Насыщенность снижена на 20–30 пунктов. Неоновые зелёный и красный — то,
+       что сильнее всего удешевляет тёмный интерфейс: статус должен читаться,
+       а не светиться. */
+    --success-300: 150 40% 68%;
+    --success-400: 150 42% 56%;
+    --success-500: 150 45% 45%;
+    --success-600: 150 48% 36%;
+    --warning-300: 40 70% 72%;
+    --warning-400: 40 72% 62%;
+    --warning-500: 40 75% 52%;
+    --warning-600: 38 78% 42%;
+    --danger-300: 4 60% 74%;
+    --danger-400: 4 62% 64%;
+    --danger-500: 4 65% 55%;
+    --danger-600: 4 62% 46%;
+    --danger-700: 4 50% 38%;
+    --danger-800: 4 46% 31%;
+    --info-300: 205 52% 74%;
+    --info-400: 205 55% 64%;
+    --info-500: 205 58% 54%;
+    --info-600: 205 60% 44%;
+
+    /* ── Chart · декоративные серии ──────────────────────────────────────
+       Одинаковая насыщенность и светлота по всей группе: иначе одна серия
+       выпрыгивает вперёд просто потому, что ярче, и график врёт. */
+    --chart-1: 18 72% 52%;
+    --chart-2: 199 58% 50%;
+    --chart-3: 150 45% 48%;
+    --chart-4: 265 45% 62%;
+    --chart-5: 40 72% 56%;
+    --chart-6: 320 38% 58%;
+
+    /* ── Семантика · светлая тема ────────────────────────────────────────── */
+    --surface: var(--gray-0); /* фон страницы */
+    --surface-1: var(--gray-0); /* карточка */
+    --surface-2: var(--gray-25); /* приподнятая карточка */
+    --surface-3: var(--gray-50); /* заливка, чип, поле ввода */
+
+    /* Тёплый почти-чёрный вместо синеватого — в паре с тёплым графитом. */
+    --content: 30 12% 9%; /* #1A1614 — основной текст */
+    --content-secondary: 30 7% 28%; /* #4C443F */
+    --content-tertiary: 30 5% 45%; /* #786F68 — приглушённый */
+    --content-quaternary: 30 5% 60%; /* плейсхолдеры, disabled */
+
+    --hairline: var(--gray-100); /* обычный разделитель */
+    --hairline-strong: var(--gray-200); /* акцентная граница */
+
+    --brand: var(--brand-500);
+    --brand-hover: var(--brand-600);
+    --brand-pressed: var(--brand-700);
+    --brand-on: 0 0% 100%; /* текст на brand */
+
+    --marine: var(--marine-700);
+    --marine-on: 0 0% 100%;
+
+    /* Материал плавающего шасси (nav, toolbar, sheet) — §12 */
+    --material: 0 0% 100%;
+    --material-opacity: 0.72;
+    --material-edge: 0 0% 100%;
+    --material-edge-opacity: 0.5;
+    --material-blur: 20px;
+    --material-saturate: 180%;
+
+    /*
+     * Акцент и заливка — разные вещи.
+     *
+     * --brand (50% светлоты) живёт на тёмном фоне как цвет текста, иконки,
+     * активной вкладки: там у него контраст 4.9.
+     *
+     * --brand-fill глубже, потому что на нём лежит белая подпись кнопки.
+     * На светлоте 50% белый даёт всего 3.79 — ниже нормы AA для обычного
+     * текста. Отсюда 41%: контраст 4.7 даже на самой светлой точке градиента.
+     * Глубокая медь к тому же выглядит дороже открытого оранжевого.
+     */
+    --brand-fill: 18 72% 41%;
+
+    /*
+     * Блик на залитой поверхности: свет сверху, тень снизу.
+     *
+     * Градиент нейтральный, а не медный, и вот почему. Цвет фона у кнопки
+     * можно переопределить классом `bg-*`, а фоновую картинку — нельзя:
+     * `background-image` живёт отдельным свойством. Медный градиент поверх
+     * серой кнопки оставался медным и закрашивал её целиком. Полупрозрачный
+     * блик ложится на любую заливку и всюду читается как освещённая
+     * поверхность, а не как чужой цвет.
+     */
+    --surface-sheen: linear-gradient(
+      180deg,
+      hsl(0 0% 100% / 0.08) 0%,
+      hsl(0 0% 100% / 0.02) 45%,
+      hsl(0 0% 0% / 0.06) 100%
+    );
+    --scrim: 30 12% 8%;
+    --scrim-opacity: 0.32;
+
+    /* ── shadcn/ui — переведён на семантику выше ────────────────────────── */
+    --background: var(--surface);
+    --foreground: var(--content);
+    --card: var(--surface-1);
+    --card-foreground: var(--content);
+    --popover: var(--surface-1);
+    --popover-foreground: var(--content);
+    --primary: var(--brand-fill);
+    --primary-foreground: var(--brand-on);
+    --secondary: var(--surface-3);
+    --secondary-foreground: var(--content);
+    --muted: var(--surface-3);
+    --muted-foreground: var(--content-tertiary);
+    --accent: var(--surface-3);
+    --accent-foreground: var(--content);
+    --destructive: var(--danger-500);
+    --destructive-foreground: 0 0% 100%;
+    --success: var(--success-500);
+    --warning: var(--warning-600);
+    --info: var(--info-600);
+    --border: var(--hairline);
+    --input: var(--hairline);
+    --ring: var(--brand);
+
+    /* ── Форма ──────────────────────────────────────────────────────────── */
+    --radius-xs: 6px;
+    --radius-sm: 8px;
+    --radius-md: 10px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-2xl: 20px;
+    --radius-3xl: 28px;
+    --radius: var(--radius-lg); /* legacy alias для shadcn */
+
+    /* ── Глубина · вес материала растёт с размером поверхности (§12) ─────── */
+    --elevation-1: 0 1px 2px hsl(var(--gray-1000) / 0.08);
+    --elevation-2: 0 2px 8px hsl(var(--gray-1000) / 0.1),
+      0 1px 2px hsl(var(--gray-1000) / 0.06);
+    --elevation-3: 0 8px 24px hsl(var(--gray-1000) / 0.14),
+      0 2px 6px hsl(var(--gray-1000) / 0.08);
+    --elevation-4: 0 24px 64px hsl(var(--gray-1000) / 0.22),
+      0 6px 16px hsl(var(--gray-1000) / 0.12);
+
+    /* ── Движение ───────────────────────────────────────────────────────────
+       Не-жестовые переходы. Всё, что можно схватить пальцем, использует
+       пружины из lib/motion.ts, а не эти длительности (§3, §4). */
+    --duration-press: 100ms; /* отклик на нажатие (§1) */
+    --duration-fast: 160ms;
+    --duration-base: 240ms;
+    --duration-slow: 320ms;
+    --ease-out: cubic-bezier(0.25, 1, 0.5, 1);
+    --ease-in: cubic-bezier(0.5, 0, 0.75, 0); /* зеркало --ease-out (§7) */
+    --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* ── Типографика · трекинг зависит от кегля (§15) ────────────────────── */
+    --tracking-display: -0.024em;
+    --tracking-title: -0.016em;
+    --tracking-headline: -0.006em;
+    --tracking-body: 0em;
+    --tracking-footnote: 0.006em;
+    --tracking-caption: 0.01em;
+  }
+
+  .dark,
+  [data-theme="dark"],
+  /* Секции, которые тёмные всегда. Это алиасы [data-theme="dark"]: раньше
+     каждая из них была блоком !important-переопределений на ~100 строк.
+     Все они рендерятся только там, где тёмная тема и нужна, поэтому
+     медиазапросы им не требуются. Для нового кода — data-theme. */
+  .admin-management-content,
+  .manager-mobile-content,
+  .client-mobile-dark,
+  .client-desktop-content,
+  .client-desktop-dark,
+  .desktop-main-content,
+  .management-modal-dark {
+    /* ── Семантика · тёмная тема ─────────────────────────────────────────── */
+    --surface: var(--gray-950);
+    --surface-1: var(--gray-900);
+    --surface-2: var(--gray-800);
+    --surface-3: var(--gray-700);
+
+    /* Тёплый белый вместо чистого: #FFFFFF на тёмном режет глаз и выглядит
+       дёшево, особенно в крупном кегле. */
+    --content: 36 15% 94%; /* #F2F0ED */
+    --content-secondary: 32 8% 78%; /* #CBC5BF */
+    --content-tertiary: var(--gray-400);
+    --content-quaternary: var(--gray-500);
+
+    /* Разделитель на ступень тише, чем заливка: раньше hairline совпадал с
+       surface-3, и рамка была такой же заметной, как сама поверхность. */
+    --hairline: var(--gray-800);
+    --hairline-strong: var(--gray-700);
+
+    --brand: var(--brand-500);
+    --brand-hover: var(--brand-400);
+    --brand-pressed: var(--brand-600);
+
+    --marine: var(--marine-700);
+
+    --material: 30 10% 9%;
+    --material-opacity: 0.7;
+    --material-edge: 36 15% 94%;
+    --material-edge-opacity: 0.1;
+    --scrim: 30 12% 4%;
+    --scrim-opacity: 0.5;
+
+    --destructive: var(--danger-700);
+    --success: var(--success-400);
+    --warning: var(--warning-400);
+    --info: var(--info-400);
+
+    /* ── shadcn/ui ────────────────────────────────────────────────────────
+       Обязательно переобъявить целиком. `var()` в значении пользовательского
+       свойства подставляется там, где свойство ОБЪЯВЛЕНО: если оставить
+       `--foreground: var(--content)` только в :root, вглубь унаследуется уже
+       вычисленное светлое значение, и переопределение `--content` ничего не
+       изменит. Поэтому каждый алиас повторяется в тёмной области. */
+    --background: var(--surface);
+    --foreground: var(--content);
+    --card: var(--surface-1);
+    --card-foreground: var(--content);
+    --popover: var(--surface-1);
+    --popover-foreground: var(--content);
+    --primary: var(--brand-fill);
+    --primary-foreground: var(--brand-on);
+    --secondary: var(--surface-3);
+    --secondary-foreground: var(--content);
+    --muted: var(--surface-3);
+    --muted-foreground: var(--content-tertiary);
+    --accent: var(--surface-3);
+    --accent-foreground: var(--content);
+    --border: var(--hairline);
+    --input: var(--hairline-strong);
+    --ring: var(--brand);
+
+    --elevation-1: 0 1px 2px hsl(var(--gray-1000) / 0.4);
+    --elevation-2: 0 2px 8px hsl(var(--gray-1000) / 0.45),
+      0 1px 2px hsl(var(--gray-1000) / 0.3);
+    --elevation-3: 0 8px 24px hsl(var(--gray-1000) / 0.55),
+      0 2px 6px hsl(var(--gray-1000) / 0.35);
+    --elevation-4: 0 24px 64px hsl(var(--gray-1000) / 0.7),
+      0 6px 16px hsl(var(--gray-1000) / 0.45);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html, body {
+    @apply bg-background text-foreground;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    min-height: 100%;
+    min-height: -webkit-fill-available;
+    /* Скрываем системные скроллбары страницы, прокрутка остаётся */
+    scrollbar-width: none; /* Firefox */
+  }
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar {
+    display: none; /* Chrome/Safari/Edge */
+  }
+  
+  /* Safe area padding */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  /* Оптимизация рендеринга для слабых устройств */
+  [data-card] {
+    content-visibility: auto;
+    contain-intrinsic-size: 200px;
+  }
+}
+
+/* ============================================================================
+   ФОКУС.
+
+   Кольцо одно на всё приложение и только для клавиатуры: мышиный клик его не
+   показывает, Tab — показывает. Смещение наружу, чтобы кольцо не съедало
+   контур самого элемента.
+   ============================================================================ */
+
+:where(a, button, input, textarea, select, [tabindex]):focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+/* ============================================================================
+   МАТЕРИАЛЫ И ГЛУБИНА — §12.
+
+   Плавающее шасси (навигация, шапка, шторка) — не сплошная плашка, а
+   полупрозрачный слой: контент виден сквозь него и скроллится под ним. Это
+   даёт сцене глубину, которой не бывает у наклеенных друг на друга плоских
+   прямоугольников.
+   ============================================================================ */
+
+@layer components {
+  /* Материал плавающего шасси. Светлая кромка сверху — свет, пойманный краем. */
+  .material-chrome {
+    background-color: hsl(var(--material) / var(--material-opacity));
+    backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturate));
+    -webkit-backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturate));
+    border-top: 1px solid hsl(var(--material-edge) / var(--material-edge-opacity));
+  }
+  /* То же для верхнего шасси — кромка снизу. */
+  .material-chrome-top {
+    background-color: hsl(var(--material) / var(--material-opacity));
+    backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturate));
+    -webkit-backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturate));
+    border-bottom: 1px solid hsl(var(--material-edge) / var(--material-edge-opacity));
+  }
+
+  /* Освещённая поверхность главной кнопки. */
+  /* Освещённая поверхность. Работает с любой заливкой — в том числе с той,
+     что пришла из `bg-*` на месте вызова. */
+  .surface-lit {
+    background-image: var(--surface-sheen);
+  }
+
+  /*
+   * §14: когда система просит меньше прозрачности, материал становится
+   * матовым — фон непрозрачный, размытие снято. Обратная связь остаётся,
+   * читаемость не страдает.
+   */
+  @media (prefers-reduced-transparency: reduce) {
+    .material-chrome,
+    .material-chrome-top {
+      background-color: hsl(var(--material));
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
+  }
+  @media (prefers-contrast: more) {
+    .material-chrome,
+    .material-chrome-top {
+      background-color: hsl(var(--material));
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      border-color: hsl(var(--hairline-strong));
+    }
+  }
+}
+
+/* ============================================================================
+   ОТКЛИК НА НАЖАТИЕ — §1 Response, §10 Gesture details.
+
+   Обратная связь появляется на pointer-down, а не на click: ожидание отпускания
+   читается как «мёртвая» кнопка. Величина сжатия зависит от размера поверхности —
+   крупная карточка, сжатая на 3%, выглядит рывком, а иконка, сжатая на 1.5%, не
+   даёт заметного отклика вовсе.
+
+   Селектор transition намеренно продублирован (`.press.press`): на многих
+   элементах уже висит `transition-all duration-300` из разметки, а утилита
+   Tailwind перекрыла бы одноклассовое правило и растянула нажатие на 300 мс —
+   ровно та задержка, ради устранения которой всё и делается. Удвоение класса
+   поднимает специфичность до (0,2,0) и оставляет transform за нами.
+   ============================================================================ */
+
+@layer components {
+  .press,
+  .press-lg,
+  .press-sm,
+  .press-dim {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation; /* убирает ~300 мс задержку тапа */
+  }
+
+  .press.press,
+  .press-lg.press-lg,
+  .press-sm.press-sm,
+  .press-dim.press-dim {
+    transition: transform var(--duration-press) var(--ease-out),
+      opacity var(--duration-press) var(--ease-out),
+      color var(--duration-fast) var(--ease-out),
+      background-color var(--duration-fast) var(--ease-out),
+      border-color var(--duration-fast) var(--ease-out);
+  }
+
+  /* Кнопки и прочие элементы обычного размера. */
+  .press.press:active {
+    transform: scale(0.97);
+  }
+  /* Крупные поверхности: карточки, плитки, баннеры. */
+  .press-lg.press-lg:active {
+    transform: scale(0.985);
+  }
+  /* Мелкие цели: иконки, чипы, счётчики. */
+  .press-sm.press-sm:active {
+    transform: scale(0.94);
+  }
+  /* Там, где менять геометрию нельзя: строки списка, вкладки, полноширинные
+     полосы — сжатие обнажило бы фон под элементом. */
+  .press-dim.press-dim:active {
+    opacity: 0.62;
+  }
+
+  /* Заблокированный элемент не отвечает на нажатие. */
+  .press.press:disabled:active,
+  .press-lg.press-lg:disabled:active,
+  .press-sm.press-sm:disabled:active,
+  .press-dim.press-dim:disabled:active,
+  .press.press[aria-disabled="true"]:active,
+  .press-lg.press-lg[aria-disabled="true"]:active,
+  .press-sm.press-sm[aria-disabled="true"]:active,
+  .press-dim.press-dim[aria-disabled="true"]:active {
+    transform: none;
+    opacity: inherit;
+  }
+
+  /* §14: reduced motion — обратная связь остаётся, но без вестибулярного
+     эффекта: вместо масштаба меняется только непрозрачность. */
+  @media (prefers-reduced-motion: reduce) {
+    .press.press:active,
+    .press-lg.press-lg:active,
+    .press-sm.press-sm:active {
+      transform: none;
+      opacity: 0.7;
+    }
+  }
+
+  /* Расширение зоны нажатия до 44×44 без изменения вида — §10 «hit padding».
+     Псевдоэлемент перехватывает нажатие, поэтому визуальный размер иконки
+     остаётся прежним, а промахнуться мимо неё уже нельзя. */
+  .hit-44 {
+    position: relative;
+  }
+  .hit-44::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+    transform: translate(-50%, -50%);
+  }
+}
+
+/* Custom animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+/* Optimized scrolling - removed smooth for better performance */
+html {
+  scroll-behavior: auto; /* auto instead of smooth for better scroll performance */
+}
+
+/* ============================================================================
+   Тёмные секции.
+
+   Раньше здесь лежало ~600 строк !important-переопределений: они перекрашивали
+   literal-классы Tailwind (`text-gray-900`, `bg-blue-50`, `bg-white`) по
+   селектору атрибута внутри каждой ролевой секции. Классов больше нет —
+   компоненты пользуются токенами, поэтому достаточно переопределить сами
+   токены на контейнере: `data-theme="dark"` (см. блок токенов выше).
+
+   Осталось только то, что цветом не является.
+   ============================================================================ */
+
+/* Тематическая область задаёт не только переменные, но и собственный цвет
+   текста: без этого элементы без явного text-* класса наследуют `color`
+   от <body>, то есть цвет светлой темы. */
+[data-theme="dark"],
+[data-theme="light"],
+.admin-management-content,
+.manager-mobile-content,
+.client-mobile-dark,
+.client-desktop-content,
+.client-desktop-dark,
+.desktop-main-content,
+.management-modal-dark {
+  color: hsl(var(--foreground));
+}
+
+/* Desktop shell вкладывает в себя мобильные экраны: у них собственный
+   полноэкранный фон, который внутри shell должен быть прозрачным. */
+.desktop-main-content .bg-background {
+  background-color: transparent;
+}
+.desktop-main-content .min-h-screen.bg-background,
+.desktop-main-content .h-screen.bg-background,
+.desktop-main-content .flex.flex-col.h-screen.bg-background {
+  min-height: 0;
+  height: auto;
+  background-color: transparent;
+}
+
+/* Нативные пикеры даты и списка follow the surrounding theme. */
+[data-theme="dark"] select,
+[data-theme="dark"] input[type="date"],
+[data-theme="dark"] input[type="time"],
+[data-theme="dark"] input[type="datetime-local"] {
+  color-scheme: dark;
+}
+[data-theme="light"] select,
+[data-theme="light"] input[type="date"],
+[data-theme="light"] input[type="time"],
+[data-theme="light"] input[type="datetime-local"] {
+  color-scheme: light;
+}
+
+/*
+ * Автозум iOS при фокусе на поле.
+ *
+ * Safari увеличивает страницу, если кегль поля меньше 16px. Раньше здесь стоял
+ * глобальный `font-size: 16px !important` без медиазапроса — он ломал
+ * типографическую шкалу во всех формах, включая десктоп, где проблемы нет
+ * вовсе. Теперь правило ограничено сенсорными экранами и не кричит
+ * !important: минимальный кегль задаётся как минимум, а не как жёсткая
+ * подмена.
+ */
+@media (pointer: coarse) {
+  input,
+  textarea,
+  select {
+    font-size: max(16px, 1em);
+    transform-origin: left top;
+    -webkit-transform-origin: left top;
+  }
+}
+
+/* Optimized hover effects for cards */
+.card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  will-change: transform;
+}
+
+.card-hover:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+/* кастомный скроллбар под белый фон */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(120, 120, 130, 0.35);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(120, 120, 130, 0.55);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+/* для Firefox */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(120, 120, 130, 0.55) transparent;
+}
+
+/* Кастомный скроллбар для тёмной темы */
+.custom-scrollbar-dark::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar-dark::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar-dark::-webkit-scrollbar-thumb {
+  background: rgba(232, 93, 43, 0.55);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+.custom-scrollbar-dark::-webkit-scrollbar-thumb:hover {
+  background: rgba(232, 93, 43, 0.8);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+.custom-scrollbar-dark {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(232, 93, 43, 0.7) transparent;
+}
+
+/* Глобальный (аккуратный) стиль скроллбаров по всему сайту */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(120, 120, 130, 0.55) transparent;
+}
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(120, 120, 130, 0.35);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(120, 120, 130, 0.55);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+/* Утилита: полностью скрыть скроллбар (если нужно точечно) */
+.hide-scrollbar {
+  -ms-overflow-style: none; /* IE/Edge */
+  scrollbar-width: none; /* Firefox */
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+/* Privacy policy card scrollbar (white background) */
+.privacy-card-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+.privacy-card-scroll::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  border-radius: 8px;
+}
+.privacy-card-scroll::-webkit-scrollbar-thumb {
+  background: #c4c4c4;
+  border-radius: 8px;
+}
+.privacy-card-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #c4c4c4 #f0f0f0;
+}
+
+/* Notification specific styles */
+/* Mobile modal improvements */
+@media (max-width: 640px) {
+  .notification-modal {
+    margin: 1rem;
+    max-height: calc(100vh - 2rem);
+  }
+}
+
+/* Line clamp utilities */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Optimized transitions for notification items */
+.notification-item {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+}
+
+.notification-item:hover {
+  transform: translateY(-1px);
+}
+
+/* Backdrop for modals - без blur для производительности */
+.modal-backdrop {
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
+/* Threads-style modal improvements */
+.threads-modal {
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.threads-modal-backdrop {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+/* Smooth animations for modal content */
+.modal-content-enter {
+  animation: modalSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Optimized button hover effects */
+.btn-threads {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+}
+
+.btn-threads:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Optimized card hover effects */
+.card-threads {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+}
+
+.card-threads:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Nokia compatibility - ensure minimum touch targets */
+.nokia-touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Ultra-small screen support */
+@media (max-width: 320px) {
+  .ultra-small-text {
+    font-size: 0.75rem;
+  }
+  
+  .ultra-small-padding {
+    padding: 0.5rem;
+  }
+  
+  .ultra-small-gap {
+    gap: 0.25rem;
+  }
+}
+
+/* PageLoader — workflow-mobile/components/ui/page-loader.tsx */
+@keyframes page-loader-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes page-loader-fill {
+  0%,
+  100% {
+    height: 0%;
+  }
+  45%,
+  55% {
+    height: 100%;
+  }
+}
+
+.page-loader-spin {
+  animation: page-loader-spin 4.2s linear infinite;
+}
+
+.page-loader-fill {
+  animation: page-loader-fill 2.7s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}

@@ -1,0 +1,214 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useIsDesktop } from "@/hooks/use-media-query";
+import api, { deleteRecurringTask, getOffices } from "@/lib/api";
+import { useRequestStore } from "@/stores/useRequestStore";
+import { useAuthStore } from "@/stores/useAuthStore";
+import { useToast } from "@/hooks/use-toast";
+import { useRequestSelectionFromUrl } from "@/hooks/useRequestSelectionFromUrl";
+import { getStatusOptionsForRole } from "@/constants/requests";
+import {
+  filterRequestGroups,
+  sortRequestGroupsByCreatedDate,
+} from "@/lib/request-utils";
+import type { AdminWorkerRequestsTab } from "@/components/admin-worker/requests/admin-worker-requests-constants";
+
+export type AdminWorkerOffice = { id: number; name: string };
+
+export function useAdminWorkerRequestsList() {
+  const isDesktop = useIsDesktop();
+  const { token } = useAuthStore();
+  const { toast } = useToast();
+  const { incomingRequests, setIncomingRequests, myRequests, setMyRequests } = useRequestStore();
+
+  /** Единые фильтры для всех вкладок — parity с workflow-mobile requests index (admin-worker). */
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [filterType, setFilterType] = useState("all");
+  const [filterOffice, setFilterOffice] = useState("all");
+  const [offices, setOffices] = useState<AdminWorkerOffice[]>([]);
+
+  const [activeTab, setActiveTab] = useState<AdminWorkerRequestsTab>("incoming");
+  const [loading, setLoading] = useState(true);
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const lastElementRef = useRef<HTMLDivElement>(null);
+
+  const statusFilterOptions = useMemo(() => getStatusOptionsForRole("admin-worker"), []);
+
+  const fetchOffices = useCallback(async () => {
+    try {
+      const res = await getOffices();
+      setOffices(res.data || []);
+    } catch (error) {
+      console.error("Ошибка загрузки офисов:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchOffices();
+  }, [fetchOffices]);
+
+  const fetchRequests = useCallback(
+    async (currentPage = 1) => {
+      if (!token) return;
+      const isFirstPage = currentPage === 1;
+      if (isFirstPage) setLoading(true);
+      else setLoadingMore(true);
+      try {
+        const params = new URLSearchParams({
+          page: currentPage.toString(),
+          pageSize: "10",
+        });
+
+        if (filterStatus !== "all" && filterStatus !== "long_term") {
+          params.append("status", filterStatus);
+        }
+        if (filterType !== "all") {
+          params.append("priority", filterType);
+        }
+        if (filterOffice !== "all") {
+          params.append("office_id", filterOffice);
+        }
+
+        const response = await api.get(`/request-groups?${params.toString()}`);
+        const sortedIncoming = sortRequestGroupsByCreatedDate(
+          response.data.otherRequests || [],
+        );
+        const sortedMy = sortRequestGroupsByCreatedDate(response.data.myRequests || []);
+
+        setIncomingRequests((prev) =>
+          currentPage === 1
+            ? sortedIncoming
+            : [...prev, ...sortedIncoming.filter((i) => !prev.some((p) => p.id === i.id))],
+        );
+        setMyRequests((prev) =>
+          currentPage === 1
+            ? sortedMy
+            : [...prev, ...sortedMy.filter((i) => !prev.some((p) => p.id === i.id))],
+        );
+        setHasMore(
+          (response.data.otherRequests?.length || 0) + (response.data.myRequests?.length || 0) >=
+            10,
+        );
+        setPage(currentPage);
+      } catch (error) {
+        console.error("Ошибка при загрузке заявок:", error);
+      } finally {
+        if (isFirstPage) setLoading(false);
+        else setLoadingMore(false);
+      }
+    },
+    [
+      token,
+      filterStatus,
+      filterType,
+      filterOffice,
+      setIncomingRequests,
+      setMyRequests,
+    ],
+  );
+
+  useEffect(() => {
+    fetchRequests(1);
+  }, [fetchRequests]);
+
+  const applyFilters = useCallback(
+    (requests: typeof incomingRequests) =>
+      sortRequestGroupsByCreatedDate(
+        filterRequestGroups(requests, {
+          status: filterStatus,
+          type: filterType,
+          officeId: filterOffice,
+        }),
+      ),
+    [filterStatus, filterType, filterOffice],
+  );
+
+  const filteredIncomingRequests = useMemo(
+    () => applyFilters(incomingRequests),
+    [incomingRequests, applyFilters],
+  );
+
+  const filteredMyRequests = useMemo(
+    () => applyFilters(myRequests),
+    [myRequests, applyFilters],
+  );
+
+  const activeList = useMemo(() => {
+    if (activeTab === "incoming") return filteredIncomingRequests;
+    if (activeTab === "my-requests") return filteredMyRequests;
+    return [];
+  }, [activeTab, filteredIncomingRequests, filteredMyRequests]);
+
+  const {
+    displayRequest,
+    selectRequest: handleCardClick,
+    closeDetail: handleClosePanel,
+    clearAfterUpdate,
+  } = useRequestSelectionFromUrl({
+    requestsBasePath: "/admin-worker/requests",
+    requestLists: [incomingRequests, myRequests],
+    fallbackLists: [filteredIncomingRequests, filteredMyRequests],
+    isDesktop,
+    isDataReady: !loading,
+  });
+
+  const handleRefresh = useCallback(async () => {
+    await fetchRequests(1);
+  }, [fetchRequests]);
+
+  const handleLoadMore = useCallback(() => {
+    if (!loadingMore && hasMore) {
+      fetchRequests(page + 1);
+    }
+  }, [loadingMore, hasMore, page, fetchRequests]);
+
+  const handleRequestUpdated = useCallback(() => {
+    fetchRequests(1);
+    clearAfterUpdate();
+  }, [fetchRequests, clearAfterUpdate]);
+
+  const handleDeleteRecurringTask = useCallback(
+    async (id: number) => {
+      try {
+        await deleteRecurringTask(id);
+        toast({ title: "Задача удалена" });
+      } catch {
+        toast({ title: "Ошибка", variant: "destructive" });
+      }
+    },
+    [toast],
+  );
+
+  return {
+    isDesktop,
+    activeTab,
+    setActiveTab,
+    filterStatus,
+    setFilterStatus,
+    filterType,
+    setFilterType,
+    filterOffice,
+    setFilterOffice,
+    offices,
+    statusFilterOptions,
+    loading,
+    loadingMore,
+    hasMore,
+    activeList,
+    filteredIncomingRequests,
+    filteredMyRequests,
+    handleRefresh,
+    handleLoadMore,
+    handleCardClick,
+    displayRequest,
+    handleClosePanel,
+    handleRequestUpdated,
+    handleDeleteRecurringTask,
+    lastElementRef,
+  };
+}
+
+export type UseAdminWorkerRequestsListResult = ReturnType<typeof useAdminWorkerRequestsList>;

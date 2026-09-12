@@ -1,0 +1,309 @@
+import React, { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Send, X } from "lucide-react";
+import { MOBILE_REQUESTS_COMMENTS_SHEET } from "@/constants/mobile-requests-ui";
+import { cn } from "@/lib/utils";
+import { CommentList, Comment } from "@/components/comment/Comment";
+import { useAuthStore } from "@/stores/useAuthStore";
+import { useCommentsStore } from "@/stores/useCommentsStore";
+
+interface CommentsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  requestId: number | null;
+  currentUserId?: number | null;
+  isDesktop?: boolean;
+  variant?: "default" | "admin";
+}
+
+export const CommentsModal: React.FC<CommentsModalProps> = ({
+  isOpen,
+  onClose,
+  requestId,
+  currentUserId = null,
+  isDesktop = false,
+  variant = "default",
+}) => {
+  const { user } = useAuthStore();
+  const {
+    comments,
+    loading,
+    initialized,
+    fetchComments,
+    addComment,
+    updateComment,
+    deleteComment,
+    resetComments
+  } = useCommentsStore();
+
+  const [comment, setComment] = useState("");
+  const [editCommentId, setEditCommentId] = useState<number | null>(null);
+
+  // Загрузка комментариев только при первом открытии модального окна
+  useEffect(() => {
+    if (isOpen && requestId && !initialized[requestId]) {
+      fetchComments(requestId);
+    }
+  }, [isOpen, requestId, initialized, fetchComments]);
+
+  // Сброс состояния при закрытии
+  useEffect(() => {
+    if (!isOpen) {
+      setComment("");
+      setEditCommentId(null);
+    }
+  }, [isOpen]);
+
+  const handleDelete = async (id: number) => {
+    if (!requestId) return;
+    
+    try {
+      await deleteComment(requestId, id);
+    } catch (err) {
+      console.error("Ошибка при удалении комментария:", err);
+    }
+  };
+
+  const handleSend = async (subRequestId: number) => {
+    if (comment.trim() === "") return;
+
+    if (editCommentId) {
+      // Редактирование комментария
+      try {
+        await updateComment(subRequestId, editCommentId, comment.trim());
+        setComment("");
+        setEditCommentId(null);
+      } catch (error) {
+        console.error("Ошибка при редактировании комментария:", error);
+      }
+    } else {
+      // Создание нового комментария
+      try {
+        await addComment(subRequestId, comment.trim(), user);
+        setComment("");
+      } catch (error) {
+        console.error("Ошибка при отправке комментария:", error);
+      }
+    }
+  };
+
+  const handleEdit = (id: number, oldComment: string) => {
+    setComment(oldComment);
+    setEditCommentId(id);
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey && requestId) {
+      e.preventDefault();
+      handleSend(requestId);
+    }
+  };
+
+  const handleInput = (e: React.FormEvent<HTMLTextAreaElement>) => {
+    const target = e.target as HTMLTextAreaElement;
+    target.style.height = 'auto';
+    target.style.height = Math.min(target.scrollHeight, 120) + 'px';
+  };
+
+  if (!isOpen || !requestId) return null;
+
+  const commentsBody = (listVariant: "dark" | "default") => (
+    <>
+      <div className="flex-1 overflow-y-auto p-4 min-h-0">
+        {loading[requestId || 0] ? (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground text-sm">Загрузка комментариев...</p>
+          </div>
+        ) : (comments[requestId || 0] || []).length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground text-sm">Комментариев пока нет</p>
+          </div>
+        ) : (
+          <CommentList
+            comments={comments[requestId || 0] || []}
+            currentUserId={currentUserId}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            variant={listVariant === "dark" ? "dark" : undefined}
+          />
+        )}
+      </div>
+      <div className="p-4 pt-3 border-t border-border bg-surface pb-[env(safe-area-inset-bottom,0px)]">
+        <div className="flex flex-col gap-3">
+          <textarea
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            onKeyPress={handleKeyPress}
+            onInput={handleInput}
+            placeholder="Написать комментарий..."
+            className="w-full min-h-[44px] max-h-[120px] p-3 rounded-xl text-sm bg-surface-3 border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
+            style={{
+              height: "auto",
+              minHeight: "44px",
+              maxHeight: "120px",
+            }}
+          />
+          <div className="flex justify-center">
+            <button
+              type="button"
+              onClick={() => handleSend(requestId)}
+              disabled={!comment.trim()}
+              className="px-6 py-3 rounded-xl bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed text-primary-foreground font-medium transition-colors inline-flex items-center justify-center gap-2"
+            >
+              <Send className="w-5 h-5" />
+              Отправить
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+
+  if (variant === "admin") {
+    if (isDesktop) {
+      return (
+        <div className="flex flex-col bg-surface fixed top-0 right-0 h-full w-[400px] max-w-[100vw] shadow-elev-4 border-l border-hairline z-[110]">
+          <div className="flex items-center justify-between p-4 border-b border-hairline flex-shrink-0">
+            <h3 className="font-semibold text-lg text-white">Комментарии</h3>
+            <button
+              type="button"
+              onClick={onClose}
+              className="hit-44 press-sm p-2 rounded-full hover:bg-white/10 text-white "
+              aria-label="Закрыть"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+          {commentsBody("dark")}
+        </div>
+      );
+    }
+
+    return (
+      <div className="fixed inset-0 z-[110] flex items-end">
+        <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+        <div
+          className={cn(
+            "relative w-full max-h-[85vh] min-h-[50vh] rounded-t-3xl flex flex-col shadow-elev-4",
+            MOBILE_REQUESTS_COMMENTS_SHEET,
+          )}
+        >
+          <div className="flex justify-center pt-3 pb-1">
+            <div className="w-10 h-1 rounded-full bg-border" />
+          </div>
+          <div className="flex items-center justify-between px-4 pb-3 border-b border-border flex-shrink-0">
+            <h3 className="font-semibold text-lg text-foreground">Комментарии</h3>
+            <button
+              type="button"
+              onClick={onClose}
+              className="hit-44 press-sm p-2 rounded-full hover:bg-white/10 text-muted-foreground "
+              aria-label="Закрыть"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+          {commentsBody("dark")}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {/* Мобильная версия (default) */}
+      {!isDesktop && (
+        <div className="fixed inset-0 z-[110] flex items-end safe-area-bottom">
+          {/* Overlay */}
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={onClose}
+          />
+
+          <div
+            className={cn(
+              "relative w-full max-h-[85vh] min-h-[50vh] rounded-t-3xl flex flex-col shadow-elev-4 animate-in slide-in-from-bottom-8",
+              MOBILE_REQUESTS_COMMENTS_SHEET,
+            )}
+          >
+            <div className="flex justify-center pt-3 pb-1">
+              <div className="w-10 h-1 rounded-full bg-border" />
+            </div>
+            <div className="flex items-center justify-between px-4 pb-3 border-b border-border flex-shrink-0">
+              <h3 className="font-semibold text-lg text-foreground">Комментарии</h3>
+              <Button variant="ghost" size="sm" onClick={onClose}>
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+            {commentsBody("default")}
+          </div>
+        </div>
+      )}
+
+      {/* Десктопная версия - правая панель */}
+      {isDesktop && (
+        <div className="fixed top-0 right-0 h-full w-96 bg-card shadow-elev-4 border-l border-hairline z-50 flex flex-col">
+          {/* Заголовок */}
+          <div className="flex items-center justify-between p-4 border-b bg-surface-3">
+            <h3 className="font-semibold text-lg">Комментарии</h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClose}
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+
+          {/* Список комментариев */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {loading[requestId || 0] ? (
+              <div className="text-center py-8">
+                <p className="text-content-tertiary text-sm">Загрузка комментариев...</p>
+              </div>
+            ) : (comments[requestId || 0] || []).length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-content-tertiary text-sm">Комментариев пока нет</p>
+              </div>
+            ) : (
+              <CommentList
+                comments={comments[requestId || 0] || []}
+                currentUserId={currentUserId}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+              />
+            )}
+          </div>
+
+          {/* Поле ввода */}
+          <div className="p-4 border-t bg-surface-3">
+            <div className="flex items-end gap-2">
+              <div className="flex-1 min-w-0">
+                <textarea
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  onInput={handleInput}
+                  placeholder="Написать комментарий..."
+                  className="w-full min-h-[40px] max-h-[120px] p-3 border border-hairline rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-marine focus:border-transparent resize-none"
+                  style={{
+                    height: 'auto',
+                    minHeight: '40px',
+                    maxHeight: '120px'
+                  }}
+                />
+              </div>
+              <Button
+                size="sm"
+                onClick={() => handleSend(requestId)}
+                className="bg-gradient-to-r from-marine to-brand-700 hover:from-marine-800 hover:to-brand-700 p-3 rounded-lg flex-shrink-0 text-white"
+                disabled={!comment.trim()}
+              >
+                <Send className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
